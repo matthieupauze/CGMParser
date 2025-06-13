@@ -57,6 +57,10 @@ namespace cgmsharp
                 var word2 = reader.ReadUInt16BE();
                 command.Partitioned = (word2 & 0x8000) != 0;
                 command.Length = (ushort)(word2 & (0x8000 - 1));
+                if (command.Partitioned)
+                {
+                    throw new InvalidDataException("Partition detected");
+                }
             }
             return command;
         }
@@ -73,15 +77,15 @@ namespace cgmsharp
     {
         public static string B(this int num)
         {
-            return Convert.ToString(num, 2).PadLeft(8, '0');
+            return Convert.ToString(num, 2).PadLeft(sizeof(int), '0');
         }
         public static string B(this ushort num)
         {
-            return Convert.ToString(num, 2).PadLeft(8, '0');
+            return Convert.ToString(num, 2).PadLeft(sizeof(ushort), '0');
         }
         public static string B(this byte num)
         {
-            return Convert.ToString(num, 2).PadLeft(8, '0');
+            return Convert.ToString(num, 2).PadLeft(sizeof(byte), '0');
         }
 
         // Note this MODIFIES THE GIVEN ARRAY then returns a reference to the modified array.
