@@ -14,16 +14,16 @@ namespace cgmsharp
         public int intPrecision = sizeof(short) * 8;
         public FPType realPrecision = FPType._32BitFix;
         
-        public VDCType vdcType;
+        public VDCType vdcType = VDCType.Integer;
         public int vdcIntPrecision = sizeof(short) * 8;
         public FPType vdcRealPrecision = FPType._32BitFix;
         
         public int indexPrecision = sizeof(short) * 8;
         public int colorIndexPrecision = sizeof(byte) * 8;
         public int colorPrecision = sizeof(byte) * 8;
-        public int maxColorIndex = 255;
+        public int maxColorIndex = 63;
 
-        public ColorModel colorModel;
+        public ColorModel colorModel = ColorModel.RGB;
         public int colorValueExtent = 0;
     }
 
@@ -93,6 +93,21 @@ namespace cgmsharp
                         break;
                     case EC.ColorModel:
                         output.colorModel = (ColorModel)reader.ReadUInt16BE();
+                        break;
+                    case EC.ColorValueExtent:
+                        if (output.colorModel == ColorModel.RGB || output.colorModel == ColorModel.CMYK)
+                        {
+                            // Save these somewhere
+                            var _minr = reader.ReadUInt16BE();
+                            var _ming = reader.ReadUInt16BE();
+                            var _minb = reader.ReadUInt16BE();
+                            var _maxr = reader.ReadUInt16BE();
+                            var _maxg = reader.ReadUInt16BE();
+                            var _maxb = reader.ReadUInt16BE();
+                        } else
+                        {
+                            throw new NotImplementedException($"{output.colorModel} color model not supported");
+                        }
                         break;
                     case EC.NoOp:
                         break;
