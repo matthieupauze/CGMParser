@@ -20,8 +20,8 @@
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="../test.cgm" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+<Target Name="CopyCustomContent" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../test.cgm" DestinationFolder="$(OutDir)" />
+</Target>
 
 </Project>

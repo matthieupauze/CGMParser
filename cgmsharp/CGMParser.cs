@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,6 +14,7 @@ namespace cgmsharp
         public string metafileDescription = string.Empty;
         public FileVersion metafileVersion;
 
+        // TODO: Convert Read functions to use this for ints
         public int intPrecision = sizeof(short) * 8;
         public FPType realPrecision = FPType._32BitFix;
         
@@ -25,6 +29,10 @@ namespace cgmsharp
 
         public ColorModel colorModel = ColorModel.RGB;
         public int colorValueExtent = 0;
+
+        public List<string> fonts = new List<string>();
+        public List<CharSet> charSets = new List<CharSet>();
+        public List<Picture> pictures = new List<Picture>();
     }
 
     public class CGMParser
@@ -41,11 +49,6 @@ namespace cgmsharp
 
             while (reader.BaseStream.Position != reader.BaseStream.Length)
             {
-                if (reader.BaseStream.Position % 2 != 0)
-                {
-                    reader.ReadByte();
-                }
-
                 var command = ReadCommand();
 
                 switch (command.Code)
@@ -60,17 +63,7 @@ namespace cgmsharp
                         output.intPrecision = reader.ReadInt16BE();
                         break;
                     case EC.RealPrecision:
-                        var fpOrFixed = (PrecisionChoice)reader.ReadInt16BE();
-                        var wholeWidth = reader.ReadInt16BE();
-                        var fieldWidth = reader.ReadInt16BE();
-                        if (fpOrFixed == PrecisionChoice.Floating)
-                        {
-                            output.realPrecision = wholeWidth == 9 ? FPType._32BitFloat : FPType._64BitFloat;
-                        }
-                        else
-                        {
-                            output.realPrecision = wholeWidth == 16 ? FPType._32BitFix : FPType._64BitFix;
-                        }
+                        output.realPrecision = reader.ReadPrecision();
                         break;
                     case EC.IndexPrecision:
                         output.indexPrecision = reader.ReadInt16BE();
@@ -97,27 +90,110 @@ namespace cgmsharp
                     case EC.ColorValueExtent:
                         if (output.colorModel == ColorModel.RGB || output.colorModel == ColorModel.CMYK)
                         {
-                            // Save these somewhere
-                            var _minr = reader.ReadUInt16BE();
-                            var _ming = reader.ReadUInt16BE();
-                            var _minb = reader.ReadUInt16BE();
-                            var _maxr = reader.ReadUInt16BE();
-                            var _maxg = reader.ReadUInt16BE();
-                            var _maxb = reader.ReadUInt16BE();
-                        } else
+                            // TODO: Save these somewhere
+                            var _minr = reader.ReadByte();
+                            var _ming = reader.ReadByte();
+                            var _minb = reader.ReadByte();
+                            var _maxr = reader.ReadByte();
+                            var _maxg = reader.ReadByte();
+                            var _maxb = reader.ReadByte();
+                            // They should be min 0 - max 255
+                        }
+                        else
                         {
                             throw new NotImplementedException($"{output.colorModel} color model not supported");
                         }
+
+                        break;
+                    case EC.FontList:
+                        var font = ReadString();
+                        output.fonts.Add(font);
+                        break;
+                    case EC.CharacterSetList:
+                        int len = command.Length;
+                        while (len != 0)
+                        {
+                            var charSet = new CharSet();
+                            charSet.Type = (CharSetType)reader.ReadUInt16BE();
+                            len -= 2;
+                            var stringLength = reader.PeekChar() + 1;
+                            charSet.Designation = ReadString();
+                            len -= stringLength;
+                            output.charSets.Add(charSet);
+                        }
+
+                        break;
+                    case EC.BeginPicture:
+                        var picture = ParsePicture();
+                        output.pictures.Add(picture);
                         break;
                     case EC.NoOp:
                         break;
                     default:
+                        /**
+                         * Instructions ignored:
+                         * Metafile elements list: I don't understand what an index-pair array is.
+                         */
                         var bytes = reader.ReadBytesRequired(command.Length);
                         break;
                 }
             }
 
             return output;
+        }
+
+        private Picture ParsePicture()
+        {
+            var picture = new Picture();
+            picture.Name = ReadString();
+            Command command;
+            do
+            {
+                command = ReadCommand();
+                switch (command.Code)
+                {
+                    case EC.BackgroundColor:
+                        picture.BackgroundColour = ReadColour();
+                        break;
+                    case EC.ColorSelectionMode:
+                        picture.ColorSelectionMode = (ColourSelectionMode)reader.ReadUInt16BE();
+                        break;
+                    case EC.LineWidthSpecMode:
+                        picture.LineWidthMode = (SizeSpecMode)reader.ReadUInt16BE();
+                        break;
+                    case EC.MarkerSizeSpecMode:
+                        picture.MarkerSizeMode = (SizeSpecMode)reader.ReadUInt16BE();
+                        break;
+                    case EC.EdgeWidthSpecMode:
+                        picture.EdgeWidthMode = (SizeSpecMode)reader.ReadUInt16BE();
+                        break;
+                    case EC.VdcExtent:
+                        picture.VdcBottomLeft = reader.ReadPoint();
+                        picture.VdcTopRight = reader.ReadPoint();
+                        break;
+                    case EC.ScalingMode:
+                        picture.ScalingMode = (ScalingMode)reader.ReadUInt16BE();
+                        if (picture.ScalingMode == ScalingMode.Metric)
+                            picture.MetricScalingFactor = reader.ReadSingle();
+                        else
+                            Debug.Assert(command.Length == 6, "Scaling Factor supplied with abstract scaling mode");
+                        break;
+                    case EC.VdcIntegerPrecision:
+                        picture.VdcIntPrecision = (VdcIntPrecision)reader.ReadUInt16BE();
+                        break;
+                    case EC.VdcRealPrecision:
+                        picture.VdcRealPrecision = reader.ReadPrecision();
+                        break;
+                    case EC.MitreLimit:
+                        picture.MitreLimit = reader.ReadSingle();
+                        break;
+                    default:
+                        reader.ReadBytesRequired(command.Length);
+                        break;
+                }
+            } while (command.Code != EC.EndPicture);
+
+            return picture;
         }
 
         private string ReadString()
@@ -128,8 +204,20 @@ namespace cgmsharp
             return Encoding.UTF8.GetString(output);
         }
 
+        private Colour ReadColour()
+        {
+            return new Colour(
+                reader.ReadByte(),
+                reader.ReadByte(),
+                reader.ReadByte()
+            );
+        }
+
         private Command ReadCommand()
         {
+            // Commands are padded to start on words
+            if (reader.BaseStream.Position % 2 != 0) reader.ReadByte();
+
             // Doesn't support partitions
             var command = new Command();
             var word = reader.ReadUInt16BE();
@@ -158,6 +246,43 @@ namespace cgmsharp
         public bool Partitioned;
         public Class Class;
         public ushort Id;
+    }
+
+    public struct CharSet
+    {
+        public CharSetType Type;
+        public string Designation;
+    }
+
+    public struct Picture
+    {
+        public string Name;
+        public Colour BackgroundColour;
+        public ColourSelectionMode ColorSelectionMode;
+        public SizeSpecMode LineWidthMode;
+        public SizeSpecMode MarkerSizeMode;
+        public SizeSpecMode EdgeWidthMode;
+        public Point VdcBottomLeft;
+        public Point VdcTopRight;
+        public ScalingMode ScalingMode;
+        public float MetricScalingFactor;
+        public VdcIntPrecision VdcIntPrecision;
+        public FPType VdcRealPrecision;
+        public float MitreLimit;
+    }
+
+    public struct Colour
+    {
+        public ushort R;
+        public ushort G;
+        public ushort B;
+
+        public Colour(ushort r, ushort g, ushort b)
+        {
+            R = r;
+            G = g;
+            B = b;
+        }
     }
 
     public static class Ext
@@ -221,6 +346,26 @@ namespace cgmsharp
                 throw new EndOfStreamException(string.Format("{0} bytes required from stream, but only {1} returned.", byteCount, result.Length));
 
             return result;
+        }
+
+        public static Point ReadPoint(this BinaryReader reader)
+        {
+            var point = new Point(
+                reader.ReadUInt16BE(),
+                reader.ReadUInt16BE()
+            );
+            return point;
+        }
+
+        public static FPType ReadPrecision(this BinaryReader reader)
+        {
+            var fpOrFixed = (PrecisionChoice)reader.ReadInt16BE();
+            var wholeWidth = reader.ReadInt16BE();
+            var fieldWidth = reader.ReadInt16BE();
+            if (fpOrFixed == PrecisionChoice.Floating)
+                return wholeWidth == 9 ? FPType._32BitFloat : FPType._64BitFloat;
+
+            return wholeWidth == 16 ? FPType._32BitFix : FPType._64BitFix;
         }
     }
 }
