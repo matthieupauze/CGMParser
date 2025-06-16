@@ -10,9 +10,11 @@ namespace TestRunner
         {
             var path = Path.Join(Directory.GetCurrentDirectory(), "test.cgm");
             var fs = new FileStream(path, FileMode.Open);
-            var instance = new CGM(fs);
+            var parser = new CGMParser();
+            var image = parser.ParseCGM(fs);
 
-            Assert.AreEqual(instance.fileName, "ICN-07GB6-CI");
+            Assert.AreEqual(image.fileName, "ICN-07GB6-CI");
+            Assert.AreEqual(image.metafileVersion, FileVersion.v3);
         }
     }
 }
