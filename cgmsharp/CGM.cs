@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.IO;
+using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace cgmsharp
@@ -49,12 +51,12 @@ namespace cgmsharp
         {
             // Doesn't support partitions
             var command = new Command();
-            var word = reader.ReadUInt16BE();
+            var word = reader.ReadUInt16();
             command.Code = (EC)((word >> 5) & 0x7FF);
             command.Length = (ushort)(word & 0b1_1111);
             if (command.Length == 0x1F)
             {
-                var word2 = reader.ReadUInt16BE();
+                var word2 = reader.ReadUInt16();
                 command.Partitioned = (word2 & 0x8000) != 0;
                 command.Length = (ushort)(word2 & (0x8000 - 1));
                 if (command.Partitioned)
@@ -77,15 +79,22 @@ namespace cgmsharp
     {
         public static string B(this int num)
         {
-            return Convert.ToString(num, 2).PadLeft(sizeof(int), '0');
+            return SplitBinary(Convert.ToString(num, 2), 32);
         }
         public static string B(this ushort num)
         {
-            return Convert.ToString(num, 2).PadLeft(sizeof(ushort), '0');
+            return SplitBinary(Convert.ToString(num, 2), 16);
         }
         public static string B(this byte num)
         {
-            return Convert.ToString(num, 2).PadLeft(sizeof(byte), '0');
+            return SplitBinary(Convert.ToString(num, 2), 8);
+        }
+
+        private static string SplitBinary(string value, int len)
+        {
+            var output = value.PadLeft(len, '0');
+            var selector = output.Select((x, i) => ((i+1) % 4 == 0 && i != output.Length-1) ? x + "_" : x.ToString());
+            return string.Join("", selector);
         }
 
         // Note this MODIFIES THE GIVEN ARRAY then returns a reference to the modified array.
