@@ -13,6 +13,46 @@
         Real = 1
     }
 
+    public enum EdgeType
+    {
+        Solid = 1,
+        Dash,
+        Dot,
+        DashDot,
+        DashDotDot,
+    }
+
+    public enum Finality
+    {
+        NotFinal,
+        Final,
+    }
+
+    public enum EdgeVisibility
+    {
+        Off,
+        On,
+    }
+
+    public enum EdgeJoin
+    {
+        Unspecified = 1,
+        Mitre,
+        Round,
+        Bevel,
+    }
+
+    public enum DrawingSet
+    {
+        Base,
+        PlusControl,
+        Version2,
+        ExtendedPrimitives,
+        Version2Gksm,
+        Version3,
+        Version4,
+    }
+
     public enum InteriorStyleType
     {
         Hollow,
@@ -234,48 +274,44 @@
         TextFontIndex = 0x5140,
         TextPrecision = 0x5160,
         CharacterExpansionFactor = 0x5180,
-
-        // TODO: Fix skipped values
-        CharacterSpacing = 0x52A0,
-        TextColor = 0x52C0,
-        CharacterHeight = 0x52E0,
-        CharacterOrientation = 0x5300,
-        TextPath = 0x5320,
-        TextAlignment = 0x5340,
-
-        // Fix this messup
-        CharacterSetIndex = 0x5360,
-        AlternateCharacterSetIndex = 0x5360,
-        FillBundleIndex = 0x5380,
-        InteriorStyle = 0x53A0,
-        FillColor = 0x53C0,
-        HatchIndex = 0x53E0,
-        PatternIndex = 0x5400,
-        EdgeBundleIndex = 0x5420,
-        EdgeType = 0x5440,
-        EdgeWidth = 0x5460,
-        EdgeColor = 0x5480,
-        EdgeVisibility = 0x54A0,
-        FillReferencePoint = 0x54C0,
-        PatternTable = 0x54E0,
-        PatternSize = 0x5500,
-        ColorTable = 0x5520,
-        AspectSourceFlags = 0x5540,
-        PickIdentifier = 0x5560,
-        LineCap = 0x5580,
-        LineJoin = 0x55A0,
-        LineTypeContinuation = 0x55C0,
-        LineTypeInitialOffset = 0x55E0,
-        TextScoreType = 0x5600,
-        RestrictedTextType = 0x5620,
-        InterpolatedInterior = 0x5640,
-        EdgeCap = 0x5660,
-        EdgeJoin = 0x5680,
-        EdgeTypeContinuation = 0x56A0,
-        EdgeTypeInitialOffset = 0x56C0,
-        SymbolLibraryIndex = 0x56E0,
-        SymbolColor = 0x5700,
-        SymbolSize = 0x5720,
-        SymbolOrientation = 0x5740,
+        CharacterSpacing = 0x51A0,
+        TextColor = 0x51C0,
+        CharacterHeight = 0x51E0,
+        CharacterOrientation = 0x5200,
+        TextPath = 0x5220,
+        TextAlignment = 0x5240,
+        CharacterSetIndex = 0x5260,
+        AlternateCharacterSetIndex = 0x5280,
+        FillBundleIndex = 0x52A0,
+        InteriorStyle = 0x52C0,
+        FillColor = 0x52E0,
+        HatchIndex = 0x5300,
+        PatternIndex = 0x5320,
+        EdgeBundleIndex = 0x5340,
+        EdgeType = 0x5360,
+        EdgeWidth = 0x5380,
+        EdgeColor = 0x53A0,
+        EdgeVisibility = 0x53C0,
+        FillReferencePoint = 0x53E0,
+        PatternTable = 0x5400,
+        PatternSize = 0x5420,
+        ColorTable = 0x5440,
+        AspectSourceFlags = 0x5460,
+        PickIdentifier = 0x5480,
+        LineCap = 0x54A0,
+        LineJoin = 0x54C0,
+        LineTypeContinuation = 0x54E0,
+        LineTypeInitialOffset = 0x5500,
+        TextScoreType = 0x55A0,
+        RestrictedTextType = 0x5540,
+        InterpolatedInterior = 0x5560,
+        EdgeCap = 0x5580,
+        EdgeJoin = 0x55A0,
+        EdgeTypeContinuation = 0x55C0,
+        EdgeTypeInitialOffset = 0x55E0,
+        SymbolLibraryIndex = 0x5600,
+        SymbolColor = 0x5620,
+        SymbolSize = 0x5640,
+        SymbolOrientation = 0x5660,
     }
 }

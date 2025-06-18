@@ -13,9 +13,9 @@ namespace TestRunner
             var parser = new CGMParser();
             var image = parser.ParseCGM(fs);
 
-            Assert.AreEqual(image.fileName, "ICN-07GB6-CI");
-            Assert.AreEqual(image.metafileVersion, FileVersion.v3);
-            Assert.AreEqual(image.pictures.Count, 1);
+            Assert.AreEqual(image.FileName, "ICN-07GB6-CI");
+            Assert.AreEqual(image.MetafileVersion, FileVersion.v3);
+            Assert.AreEqual(image.Pictures.Count, 1);
         }
     }
 }
