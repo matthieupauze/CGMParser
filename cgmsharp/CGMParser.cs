@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -283,6 +282,17 @@ namespace cgmsharp
         public bool Partitioned;
         public Class Class;
         public ushort Id;
+    }
+
+    public struct Point(ushort x, ushort y)
+    {
+        public ushort X = x;
+        public ushort Y = y;
+
+        public override string ToString()
+        {
+            return $"{{ X = {X}, Y = {Y} }}";
+        }
     }
 
     public struct CharSet(CharSetType type, string designation)

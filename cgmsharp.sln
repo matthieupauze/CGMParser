@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRunner", "TestRunner\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cgmsharp", "cgmsharp\cgmsharp.csproj", "{A782D76D-FE07-4B24-816C-F7F4683F6D4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Viewer", "Viewer\Viewer.csproj", "{9B1C4D74-23A0-434D-B07D-32A943232C89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +23,15 @@ Global
 		{A782D76D-FE07-4B24-816C-F7F4683F6D4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A782D76D-FE07-4B24-816C-F7F4683F6D4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A782D76D-FE07-4B24-816C-F7F4683F6D4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B1C4D74-23A0-434D-B07D-32A943232C89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B1C4D74-23A0-434D-B07D-32A943232C89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B1C4D74-23A0-434D-B07D-32A943232C89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B1C4D74-23A0-434D-B07D-32A943232C89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E2B97E02-ACFD-4DE2-8FA1-7C0D395A535C}
 	EndGlobalSection
 EndGlobal
