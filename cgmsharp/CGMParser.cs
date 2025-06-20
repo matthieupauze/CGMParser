@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -30,7 +31,7 @@ namespace cgmsharp
         public ColorModel ColorModel = ColorModel.RGB;
         public int ColorValueExtent = 0;
 
-        public List<string> Fonts = [];
+        public string Font = "Arial";
         public List<CharSet> CharSets = [];
         public List<Picture> Pictures = [];
     }
@@ -107,8 +108,7 @@ namespace cgmsharp
 
                         break;
                     case EC.FontList:
-                        var font = reader.ReadString();
-                        metafile.Fonts.Add(font);
+                        metafile.Font = reader.ReadString();
                         break;
                     case EC.CharacterSetList:
                         int len = command.Length;
@@ -206,7 +206,7 @@ namespace cgmsharp
                     case EC.Polyline:
                         // 2 points * 2 bytes each
                         var points = reader.ReadPoints(command.Length / (sizeof(ushort) * 2));
-                        picture.Primitives.Add(new Polyline(points));
+                        picture.Polylines.Add(new Polyline(points));
                         break;
                     case EC.TextColor:
                         picture.TextColor = reader.ReadColour(command);
@@ -349,7 +349,7 @@ namespace cgmsharp
         public Colour LineColor;
         public Colour TextColor;
         public Colour FillColor;
-        public List<object> Primitives = [];
+        public List<Polyline> Polylines = [];
         public ushort CharSetIndex;
         public EdgeType EdgeType;
         public ushort EdgeWidth;
@@ -497,6 +497,16 @@ namespace cgmsharp
                 return wholeWidth == 9 ? FPType._32BitFloat : FPType._64BitFloat;
 
             return wholeWidth == 16 ? FPType._32BitFix : FPType._64BitFix;
+        }
+
+        public static Color ToColor(this Colour c)
+        {
+            return Color.FromArgb(c.R, c.G, c.B);
+        }
+
+        public static PointF ToPointF(this Point p)
+        {
+            return new PointF(p.X, p.Y);
         }
     }
 }

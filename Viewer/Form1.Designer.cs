@@ -37,6 +37,7 @@
             // listView1
             // 
             listView1.AllowDrop = true;
+            listView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             listView1.Columns.AddRange(new ColumnHeader[] { columnName, columnValue });
             listView1.Location = new Point(12, 12);
             listView1.Name = "listView1";
@@ -57,8 +58,12 @@
             // 
             // cgmCanvas1
             // 
+            cgmCanvas1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            cgmCanvas1.BackColor = Color.White;
             cgmCanvas1.Location = new Point(462, 12);
+            cgmCanvas1.Margin = new Padding(30);
             cgmCanvas1.Name = "cgmCanvas1";
+            cgmCanvas1.Padding = new Padding(30);
             cgmCanvas1.Size = new Size(493, 554);
             cgmCanvas1.TabIndex = 1;
             // 

@@ -23,6 +23,7 @@ public partial class Form1 : Form
             var image = parser.ParseCGM(fileStream);
             AddDebugElements(image);
             cgmCanvas1.Image = image;
+            cgmCanvas1.Refresh();
         }
     }
 
@@ -30,9 +31,10 @@ public partial class Form1 : Form
     private void AddDebugElements(CGMImage image)
     {
         var elements = new List<Item>();
-        Stringify("", image, image.GetType(), ref elements, 6);
+        Stringify("", image, image.GetType(), ref elements, 3);
 
         foreach (var i in elements) listView1.Items.Add(i.Name).SubItems.Add(i.Value);
+        listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
     }
 
     private void Stringify<T>(string name, T item, Type t, ref List<Item> items, int depth)
