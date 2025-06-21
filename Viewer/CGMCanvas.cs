@@ -26,7 +26,7 @@ namespace Viewer
             var xScale = (float)drawZone.Width / vdcWidth;
             var yScale = (float)drawZone.Height / vdcHeight;
 
-            var pen = new Pen(Brushes.Black);
+            var pen = new Pen(picture.LineColor.ToColor(), picture.LineWidth * xScale);
             var font = new Font(Image.Font, 12f);
             var fontHeight = font.GetHeight(e.Graphics);
 

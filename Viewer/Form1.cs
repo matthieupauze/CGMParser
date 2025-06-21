@@ -31,7 +31,7 @@ public partial class Form1 : Form
     private void AddDebugElements(CGMImage image)
     {
         var elements = new List<Item>();
-        Stringify("", image, image.GetType(), ref elements, 3);
+        Stringify("", image, image.GetType(), ref elements, 6);
 
         foreach (var i in elements) listView1.Items.Add(i.Name).SubItems.Add(i.Value);
         listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);

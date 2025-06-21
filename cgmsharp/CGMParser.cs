@@ -18,20 +18,21 @@ namespace cgmsharp
         // TODO: Convert Read functions to use this for ints
         public int IntPrecision = sizeof(short) * 8;
         public FPType RealPrecision = FPType._32BitFix;
+        public CharacterCodingAnnouncer Announcer;
 
         public VDCType VdcType = VDCType.Integer;
         public int VdcIntPrecision = sizeof(short) * 8;
         public FPType VdcRealPrecision = FPType._32BitFix;
 
         public int IndexPrecision = sizeof(short) * 8;
-        public int ColorIndexPrecision = sizeof(byte) * 8;
-        public int ColorPrecision = sizeof(byte) * 8;
-        public int MaxColorIndex = 63;
+        public Precision ColorIndexPrecision = Precision._8;
+        public Precision ColorPrecision = Precision._8;
+        public uint MaxColorIndex = 63;
 
         public ColorModel ColorModel = ColorModel.RGB;
         public int ColorValueExtent = 0;
 
-        public string Font = "Arial";
+        public List<string> Fonts = [];
         public List<CharSet> CharSets = [];
         public List<Picture> Pictures = [];
     }
@@ -45,7 +46,7 @@ namespace cgmsharp
             var mReader = new MemoryStream();
             dataStream.CopyTo(mReader);
             mReader.Position = 0;
-            reader = new BinaryReader(mReader);
+            reader = new(mReader);
             var metafile = new CGMImage();
 
             while (reader.BaseStream.Position != reader.BaseStream.Length)
@@ -55,9 +56,10 @@ namespace cgmsharp
                 switch (command.Code)
                 {
                     case EC.BeginMetafile:
-                        metafile.FileName = reader.ReadString();
+                        metafile.FileName = ReadString();
                         break;
                     case EC.VDCType:
+                        // TODO: Handle case for real
                         metafile.VdcType = (VDCType)reader.ReadInt16BE();
                         break;
                     case EC.IntegerPrecision:
@@ -70,21 +72,21 @@ namespace cgmsharp
                         metafile.IndexPrecision = reader.ReadInt16BE();
                         break;
                     case EC.ColorIndexPrecision:
-                        metafile.ColorIndexPrecision = reader.ReadInt16BE();
+                        metafile.ColorIndexPrecision = (Precision)reader.ReadInt16BE();
                         break;
                     case EC.ColourPrecision:
-                        metafile.ColorPrecision = reader.ReadInt16BE();
+                        metafile.ColorPrecision = (Precision)reader.ReadInt16BE();
                         break;
                     case EC.MetafileVersion:
                         metafile.MetafileVersion = (FileVersion)reader.ReadInt16BE();
                         break;
                     case EC.MetafileDescription:
                         if (metafile.MetafileDescription == string.Empty)
-                            metafile.MetafileDescription = reader.ReadString();
-                        else metafile.MetafileDescription += reader.ReadString();
+                            metafile.MetafileDescription = ReadString();
+                        else metafile.MetafileDescription += ReadString();
                         break;
                     case EC.MaxColorIndex:
-                        metafile.MaxColorIndex = reader.ReadUInt16BE();
+                        metafile.MaxColorIndex = ReadColourIndex(metafile);
                         break;
                     case EC.ColorModel:
                         metafile.ColorModel = (ColorModel)reader.ReadUInt16BE();
@@ -108,16 +110,25 @@ namespace cgmsharp
 
                         break;
                     case EC.FontList:
-                        metafile.Font = reader.ReadString();
+                        int len = command.Length;
+                        while (len != 0)
+                        {
+                            len -= reader.PeekChar() + 1;
+                            metafile.Fonts.Add(ReadString());
+                        }
+
+                        break;
+                    case EC.FontProperties:
+                        _ = reader.ReadBytes(command.Length);
                         break;
                     case EC.CharacterSetList:
-                        int len = command.Length;
+                        len = command.Length;
                         while (len != 0)
                         {
                             var type = (CharSetType)reader.ReadUInt16BE();
                             len -= 2;
                             var stringLength = reader.PeekChar() + 1;
-                            var designation = reader.ReadString();
+                            var designation = ReadString();
                             len -= stringLength;
                             metafile.CharSets.Add(new(type, designation));
                         }
@@ -133,6 +144,9 @@ namespace cgmsharp
                             metafile.DrawingSet[i] = (DrawingSet)reader.ReadUInt16BE();
                         }
 
+                        break;
+                    case EC.CharacterCodingAnnouncer:
+                        metafile.Announcer = (CharacterCodingAnnouncer)reader.ReadUInt16BE();
                         break;
                     case EC.BeginPicture:
                         var picture = ParsePicture(metafile);
@@ -152,7 +166,7 @@ namespace cgmsharp
 
         private Picture ParsePicture(CGMImage output)
         {
-            var picture = new Picture(reader.ReadString());
+            var picture = new Picture(ReadString());
             Command command;
             do
             {
@@ -175,6 +189,7 @@ namespace cgmsharp
                         picture.EdgeWidthMode = (SizeSpecMode)reader.ReadUInt16BE();
                         break;
                     case EC.VdcExtent:
+                        // TODO: Update to work with Real numbers
                         picture.VdcBottomLeft = reader.ReadPoint();
                         picture.VdcTopRight = reader.ReadPoint();
                         break;
@@ -206,7 +221,7 @@ namespace cgmsharp
                     case EC.Polyline:
                         // 2 points * 2 bytes each
                         var points = reader.ReadPoints(command.Length / (sizeof(ushort) * 2));
-                        picture.Polylines.Add(new Polyline(points));
+                        picture.Polylines.Add(new(points));
                         break;
                     case EC.TextColor:
                         picture.TextColor = reader.ReadColour(command);
@@ -262,7 +277,7 @@ namespace cgmsharp
                         picture.CharacterHeight = reader.ReadUInt16BE();
                         break;
                     case EC.Text:
-                        var text = new Text(reader.ReadPoint(), (Finality)reader.ReadUInt16BE(), reader.ReadString());
+                        var text = new Text(reader.ReadPoint(), (Finality)reader.ReadUInt16BE(), ReadString());
                         picture.Text.Add(text);
                         break;
                     default:
@@ -272,6 +287,26 @@ namespace cgmsharp
             } while (command.Code != EC.EndPicture);
 
             return picture;
+        }
+
+        public string ReadString()
+        {
+            // Doesn't support long form strings (longer than 255 characters)
+            var len = reader.ReadByte();
+            var output = reader.ReadBytesRequired(len);
+            return Encoding.UTF8.GetString(output);
+        }
+
+        public uint ReadColourIndex(CGMImage image)
+        {
+            return image.ColorIndexPrecision switch
+            {
+                Precision._8 => reader.ReadByte(),
+                Precision._16 => reader.ReadUInt16(),
+                Precision._24 => reader.ReadSWordBE(),
+                Precision._32 => reader.ReadByte(),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
         }
     }
 
@@ -312,6 +347,11 @@ namespace cgmsharp
         public byte R = r;
         public byte G = g;
         public byte B = b;
+
+        public override string ToString()
+        {
+            return $"{{ R = {R}, G = {G}, B = {B} }}";
+        }
     }
 
     // VDC size based struct. ushort should be generic
@@ -333,7 +373,7 @@ namespace cgmsharp
     public struct Picture(string name)
     {
         public string Name = name;
-        public Colour BackgroundColour;
+        public Colour BackgroundColour = new(255, 255, 255);
         public ColourSelectionMode ColorSelectionMode;
         public SizeSpecMode LineWidthMode;
         public SizeSpecMode MarkerSizeMode;
@@ -372,10 +412,12 @@ namespace cgmsharp
         {
             return SplitBinary(Convert.ToString(num, 2), 32);
         }
+
         public static string B(this ushort num)
         {
             return SplitBinary(Convert.ToString(num, 2), 16);
         }
+
         public static string B(this byte num)
         {
             return SplitBinary(Convert.ToString(num, 2), 8);
@@ -384,7 +426,7 @@ namespace cgmsharp
         private static string SplitBinary(string value, int len)
         {
             var output = value.PadLeft(len, '0');
-            var selector = output.Select((x, i) => ((i + 1) % 4 == 0 && i != output.Length - 1) ? x + "_" : x.ToString());
+            var selector = output.Select((x, i) => (i + 1) % 4 == 0 && i != output.Length - 1 ? x + "_" : x.ToString());
             return string.Join("", selector);
         }
 
@@ -417,9 +459,16 @@ namespace cgmsharp
             var result = reader.ReadBytes(byteCount);
 
             if (result.Length != byteCount)
-                throw new EndOfStreamException(string.Format("{0} bytes required from stream, but only {1} returned.", byteCount, result.Length));
+                throw new EndOfStreamException(string.Format("{0} bytes required from stream, but only {1} returned.",
+                    byteCount, result.Length));
 
             return result;
+        }
+
+        public static uint ReadSWordBE(this BinaryReader reader)
+        {
+            var bytes = reader.ReadBytesRequired(3);
+            return (uint)((bytes[0] << 16) | (bytes[1] << 8) | bytes[2]);
         }
 
         public static Command ReadCommand(this BinaryReader reader)
@@ -443,14 +492,6 @@ namespace cgmsharp
             }
 
             return command;
-        }
-
-        public static string ReadString(this BinaryReader reader)
-        {
-            // Doesn't support long form strings (longer than 255 characters)
-            var len = reader.ReadByte();
-            var output = reader.ReadBytesRequired(len);
-            return Encoding.UTF8.GetString(output);
         }
 
         public static Point ReadPoint(this BinaryReader reader)

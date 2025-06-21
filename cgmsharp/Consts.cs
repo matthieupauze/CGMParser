@@ -79,6 +79,22 @@
         _32 = 32,
     }
 
+    public enum Precision
+    {
+        _8 = 8,
+        _16 = 16,
+        _24 = 24,
+        _32 = 32,
+    }
+
+    public enum CharacterCodingAnnouncer
+    {
+        Basic7,
+        Basic8,
+        Extended7,
+        Extended8,
+    }
+
     public enum ColourSelectionMode
     {
         Indexed,
