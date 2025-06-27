@@ -5,6 +5,8 @@ namespace Viewer;
 
 public partial class Form1 : Form
 {
+    private const int DebugPropertyDepth = 3;
+
     public Form1()
     {
         InitializeComponent();
@@ -28,10 +30,10 @@ public partial class Form1 : Form
     }
 
 
-    private void AddDebugElements(CGMImage image)
+    private void AddDebugElements(Metafile image)
     {
         var elements = new List<Item>();
-        Stringify("", image, image.GetType(), ref elements, 6);
+        Stringify("", image, image.GetType(), ref elements, DebugPropertyDepth);
 
         foreach (var i in elements) listView1.Items.Add(i.Name).SubItems.Add(i.Value);
         listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
