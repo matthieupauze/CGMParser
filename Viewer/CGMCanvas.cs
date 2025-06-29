@@ -35,8 +35,8 @@ namespace Viewer
 
             PointF ScalePoint(PointF p)
             {
-                var x = 15 + (int)Math.Floor(p.X * fxScale);
-                var y = 15 + drawZone.Height - (int)Math.Floor(p.Y * fyScale);
+                var x = 15 + p.X * fxScale;
+                var y = 15 + drawZone.Height - p.Y * fyScale;
                 return new(x, y);
             }
 

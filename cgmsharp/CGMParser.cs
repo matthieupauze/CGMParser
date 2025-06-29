@@ -168,7 +168,7 @@ namespace cgmsharp
                     case EC.ScalingMode:
                         picture.ScalingMode = (ScalingMode)reader.ReadUInt16BE();
                         if (picture.ScalingMode == ScalingMode.Metric)
-                            picture.MetricScalingFactor = reader.ReadSingle();
+                            picture.MetricScalingFactor = reader.ReadSingleBE();
                         else
                             Debug.Assert(command.Length == 6, "Scaling Factor supplied with abstract scaling mode");
                         break;
@@ -179,7 +179,7 @@ namespace cgmsharp
                         picture.VdcRealPrecision = ReadPrecision();
                         break;
                     case EC.MitreLimit:
-                        picture.MitreLimit = reader.ReadSingle();
+                        picture.MitreLimit = reader.ReadSingleBE();
                         break;
                     case EC.LineWidth:
                         if (picture.LineWidthMode == SizeSpecMode.Absolute)
@@ -243,7 +243,7 @@ namespace cgmsharp
                             reader.ReadUInt16BE(), reader.ReadUInt16BE());
                         break;
                     case EC.CharacterExpansionFactor:
-                        picture.CharacterExpansionFactor = reader.ReadSingle();
+                        picture.CharacterExpansionFactor = reader.ReadSingleBE();
                         break;
                     case EC.CharacterHeight:
                         picture.CharacterHeight = reader.ReadUInt16BE();
@@ -332,8 +332,8 @@ namespace cgmsharp
                 },
                 VDCType.Real => picture.VdcRealPrecision switch
                 {
-                    FloatingPrecision._32BitFloat => reader.ReadSingle(),
-                    FloatingPrecision._64BitFloat => reader.ReadDouble(),
+                    FloatingPrecision._32BitFloat => reader.ReadSingleBE(),
+                    FloatingPrecision._64BitFloat => reader.ReadDoubleBE(),
                     FloatingPrecision._32BitFix => reader.ReadSingleFixed(),
                     FloatingPrecision._64BitFix => reader.ReadDoubleFixed(),
                     _ => throw new ArgumentOutOfRangeException(),
@@ -616,18 +616,21 @@ namespace cgmsharp
             return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
         }
 
-        public static double ReadSingleBE(this BinaryReader reader)
+        public static unsafe float ReadSingleBE(this BinaryReader reader)
         {
-            var whole = reader.ReadInt16BE();
-            var fraction = reader.ReadUInt16BE();
-            return whole + fraction / 0x8000;
+            var b = reader.ReadBytesRequired(4);
+            uint temp = (uint)((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]);
+            return *(float*)&temp;
         }
 
-        public static double ReadDoubleBE(this BinaryReader reader)
+        public static unsafe double ReadDoubleBE(this BinaryReader reader)
         {
-            var whole = reader.ReadInt16BE();
-            var fraction = reader.ReadUInt16BE();
-            return whole + fraction / 0x8000;
+            var b = reader.ReadBytesRequired(8);
+            uint hi = (uint)((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]);
+            uint lo = (uint)((b[4] << 24) | (b[5] << 16) | (b[6] << 8) | b[7]);
+
+            ulong temp = ((ulong)hi) << 32 | lo;
+            return *(double*)&temp;
         }
 
         public static double ReadSingleFixed(this BinaryReader reader)
@@ -662,7 +665,7 @@ namespace cgmsharp
 
         public static PointF ToPointF(this Point p)
         {
-            return new((float)Math.Floor(p.X), (float)Math.Floor(p.Y));
+            return new((float)p.X, (float)p.Y);
         }
     }
 }
