@@ -139,12 +139,12 @@
         Fixed = 1,
     }
 
-    public enum FPType
+    public enum FloatingPrecision
     {
         _32BitFloat,
         _64BitFloat,
         _32BitFix,
-        _64BitFix
+        _64BitFix,
     }
 
     public enum Class

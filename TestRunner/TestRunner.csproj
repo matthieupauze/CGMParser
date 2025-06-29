@@ -21,7 +21,10 @@
   </ItemGroup>
 
 <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
-    <Copy SourceFiles="../test.cgm" DestinationFolder="$(OutDir)" />
+    <ItemGroup>
+        <MySourceFiles Include="../**/test*.cgm"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(OutDir)" />
 </Target>
 
 </Project>
