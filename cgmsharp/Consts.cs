@@ -329,5 +329,20 @@
         SymbolColor = 0x5620,
         SymbolSize = 0x5640,
         SymbolOrientation = 0x5660,
+
+        Escape = 0x6020,
+
+        Message = 0x7020,
+        ApplicationData = 0x7040,
+
+        CopySegment = 0x8020,
+        InheritanceFilter = 0x8040,
+        ClipInheritance = 0x8060,
+        SegmentTransformation = 0x8080,
+        SegmentHighlighting = 0x80A0,
+        SegmentDisplayPriority = 0x80C0,
+        SegmentPickPriority = 0x80E0,
+
+        ApplicationStructureAttribute = 0x9020
     }
 }

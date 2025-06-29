@@ -40,6 +40,7 @@ namespace cgmsharp
     public class CGMParser
     {
         private BinaryReader reader = null!;
+        private CGMImage metafile = null!;
 
         public CGMImage ParseCGM(Stream dataStream)
         {
@@ -47,7 +48,7 @@ namespace cgmsharp
             dataStream.CopyTo(mReader);
             mReader.Position = 0;
             reader = new(mReader);
-            var metafile = new CGMImage();
+            metafile = new CGMImage();
 
             while (reader.BaseStream.Position != reader.BaseStream.Length)
             {
@@ -86,7 +87,7 @@ namespace cgmsharp
                         else metafile.MetafileDescription += ReadString();
                         break;
                     case EC.MaxColorIndex:
-                        metafile.MaxColorIndex = ReadColourIndex(metafile);
+                        metafile.MaxColorIndex = ReadPrecision(metafile.ColorIndexPrecision);
                         break;
                     case EC.ColorModel:
                         metafile.ColorModel = (ColorModel)reader.ReadUInt16BE();
@@ -164,7 +165,7 @@ namespace cgmsharp
             return metafile;
         }
 
-        private Picture ParsePicture(CGMImage output)
+        private Picture ParsePicture(CGMImage metafile)
         {
             var picture = new Picture(ReadString());
             Command command;
@@ -174,7 +175,7 @@ namespace cgmsharp
                 switch (command.Code)
                 {
                     case EC.BackgroundColor:
-                        picture.BackgroundColour = reader.ReadColour(command);
+                        picture.BackgroundColour = reader.ReadDirectColour();
                         break;
                     case EC.ColorSelectionMode:
                         picture.ColorSelectionMode = (ColourSelectionMode)reader.ReadUInt16BE();
@@ -189,9 +190,8 @@ namespace cgmsharp
                         picture.EdgeWidthMode = (SizeSpecMode)reader.ReadUInt16BE();
                         break;
                     case EC.VdcExtent:
-                        // TODO: Update to work with Real numbers
-                        picture.VdcBottomLeft = reader.ReadPoint();
-                        picture.VdcTopRight = reader.ReadPoint();
+                        picture.VdcBottomLeft = ReadVdcPoint();
+                        picture.VdcTopRight = ReadVdcPoint();
                         break;
                     case EC.ScalingMode:
                         picture.ScalingMode = (ScalingMode)reader.ReadUInt16BE();
@@ -210,13 +210,10 @@ namespace cgmsharp
                         picture.MitreLimit = reader.ReadSingle();
                         break;
                     case EC.LineWidth:
-                        if (picture.LineWidthMode == SizeSpecMode.Absolute && output.VdcType == VDCType.Real)
-                            throw new NotImplementedException("Support for VDC Real not implemented");
-                        if (picture.LineWidthMode == SizeSpecMode.Absolute) picture.LineWidth = reader.ReadUInt16BE();
-                        else throw new NotImplementedException("Line Width Mode other than absolute not implemented");
+                        picture.LineWidth = ReadSizeSpecification(picture.LineWidthMode);
                         break;
                     case EC.LineColor:
-                        picture.LineColor = reader.ReadColour(command);
+                        picture.LineColor = reader.ReadColour(picture);
                         break;
                     case EC.Polyline:
                         // 2 points * 2 bytes each
@@ -224,7 +221,7 @@ namespace cgmsharp
                         picture.Polylines.Add(new(points));
                         break;
                     case EC.TextColor:
-                        picture.TextColor = reader.ReadColour(command);
+                        picture.TextColor = reader.ReadColour(picture);
                         break;
                     case EC.CharacterSetIndex:
                         picture.CharSetIndex = reader.ReadUInt16BE();
@@ -239,7 +236,7 @@ namespace cgmsharp
                         picture.InteriorStyle = (InteriorStyleType)reader.ReadUInt16BE();
                         break;
                     case EC.FillColor:
-                        picture.FillColor = reader.ReadColour(command);
+                        picture.FillColor = reader.ReadColour(picture);
                         break;
                     case EC.LineJoin:
                         picture.LineJoin = (LineJoinType)reader.ReadUInt16BE();
@@ -248,6 +245,8 @@ namespace cgmsharp
                     case EC.BeginFigure:
                     case EC.EndFigure:
                     case EC.EndPicture:
+                    case EC.BeginApplicationStructureBody:
+                    case EC.EndApplicationStructure:
                         // TODO: Read part 1 of spec to find out what goes here
                         break;
                     case EC.EdgeType:
@@ -257,7 +256,7 @@ namespace cgmsharp
                         picture.EdgeWidth = reader.ReadUInt16BE();
                         break;
                     case EC.EdgeColor:
-                        picture.EdgeColor = reader.ReadColour(command);
+                        picture.EdgeColor = reader.ReadColour(picture);
                         break;
                     case EC.EdgeVisibility:
                         picture.EdgeVisibility = (EdgeVisibility)reader.ReadUInt16BE();
@@ -280,6 +279,29 @@ namespace cgmsharp
                         var text = new Text(reader.ReadPoint(), (Finality)reader.ReadUInt16BE(), ReadString());
                         picture.Text.Add(text);
                         break;
+                    case EC.ColorTable:
+                        var startingIndex = ReadPrecision(metafile.ColorIndexPrecision);
+                        picture.ColorTable = ReadColours(command.Length - ((int)metafile.ColorIndexPrecision / 8));
+                        break;
+                    case EC.ClipIndicator:
+                        picture.ClipIndicator = reader.ReadUInt16BE() == 1;
+                        break;
+                    case EC.Transparency:
+                        picture.Transparency = reader.ReadUInt16BE() == 1;
+                        break;
+                    case EC.RestrictedTextType:
+                        // Handle
+                        reader.ReadBytesRequired(command.Length);
+                        break;
+                    case EC.BeginApplicationStructure:
+                        reader.ReadBytesRequired(command.Length);
+                        break;
+                    case EC.ApplicationStructureAttribute:
+                        reader.ReadBytesRequired(command.Length);
+                        break;
+                    case EC.LineCap:
+                        reader.ReadBytesRequired(command.Length);
+                        break;
                     default:
                         _ = reader.ReadBytesRequired(command.Length);
                         break;
@@ -297,15 +319,55 @@ namespace cgmsharp
             return Encoding.UTF8.GetString(output);
         }
 
-        public uint ReadColourIndex(CGMImage image)
+        public uint ReadPrecision(Precision p)
         {
-            return image.ColorIndexPrecision switch
+            return p switch
             {
                 Precision._8 => reader.ReadByte(),
                 Precision._16 => reader.ReadUInt16(),
                 Precision._24 => reader.ReadSWordBE(),
                 Precision._32 => reader.ReadByte(),
                 _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+
+        public Colour[] ReadColours(int length)
+        {
+            var output = new List<Colour>();
+            while (length > 0)
+            {
+                output.Add(reader.ReadDirectColour());
+                length -= 3;
+            }
+            return output.ToArray();
+        }
+
+        public PointF ReadVdcPoint()
+        {
+            return metafile.VdcType switch
+            {
+                VDCType.Integer => new PointF(reader.ReadUInt16BE(), reader.ReadUInt16BE()),
+                VDCType.Real => new PointF(reader.ReadSingle(), reader.ReadSingle()),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+        }
+
+        public float ReadVdc()
+        {
+            return metafile.VdcType switch
+            {
+                VDCType.Integer => reader.ReadUInt16BE(),
+                VDCType.Real => reader.ReadSingle(),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+
+        public float ReadSizeSpecification(SizeSpecMode spec)
+        {
+            return spec switch 
+            { 
+                SizeSpecMode.Absolute => ReadVdc(),
+                _ => reader.ReadSingle()
             };
         }
     }
@@ -375,17 +437,19 @@ namespace cgmsharp
         public string Name = name;
         public Colour BackgroundColour = new(255, 255, 255);
         public ColourSelectionMode ColorSelectionMode;
+        public Colour[] ColorTable = [];
         public SizeSpecMode LineWidthMode;
         public SizeSpecMode MarkerSizeMode;
         public SizeSpecMode EdgeWidthMode;
-        public Point VdcBottomLeft = new(0, 0);
-        public Point VdcTopRight = new(32767, 32767);
+        public PointF VdcBottomLeft = new(0, 0);
+        // TODO: Check to see if this default value is based on metafile VDCType
+        public PointF VdcTopRight = new(32767, 32767);
         public ScalingMode ScalingMode;
         public float MetricScalingFactor;
         public VdcIntPrecision VdcIntPrecision;
         public FPType VdcRealPrecision;
         public float MitreLimit;
-        public ushort LineWidth;
+        public float LineWidth;
         public Colour LineColor;
         public Colour TextColor;
         public Colour FillColor;
@@ -403,6 +467,8 @@ namespace cgmsharp
         public LineJoinType LineJoin;
         public float CharacterExpansionFactor;
         public ushort CharacterHeight;
+        public bool ClipIndicator;
+        public bool Transparency;
         public List<Text> Text = [];
     }
 
@@ -515,18 +581,27 @@ namespace cgmsharp
             return points;
         }
 
-        public static Colour ReadColour(this BinaryReader reader, Command cmd)
+        public static Colour ReadColour(this BinaryReader reader, Picture picture)
         {
-            if (cmd.Length == 3)
+            if (picture.ColorSelectionMode == ColourSelectionMode.Direct)
+            {
                 return new(
                     reader.ReadByte(),
                     reader.ReadByte(),
                     reader.ReadByte()
                 );
-            Console.WriteLine(
-                $"Unexpected length for color, expected 6 got {cmd.Length} discarding bytes and using black");
-            reader.ReadBytesRequired(cmd.Length);
-            return new();
+            } else
+            {
+                return picture.ColorTable[reader.ReadByte()];
+            }
+        }
+        public static Colour ReadDirectColour(this BinaryReader reader)
+        {
+            return new(
+                reader.ReadByte(),
+                reader.ReadByte(),
+                reader.ReadByte()
+            );
         }
 
         public static FPType ReadPrecision(this BinaryReader reader)

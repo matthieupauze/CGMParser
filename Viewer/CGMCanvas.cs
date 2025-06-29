@@ -21,19 +21,19 @@ namespace Viewer
             e.Graphics.Clear(picture.BackgroundColour.ToColor());
             var drawZone = Rectangle.Inflate(e.ClipRectangle, -15, -15);
 
-            var vdcWidth = int.Abs(picture.VdcTopRight.X - picture.VdcBottomLeft.X);
-            var vdcHeight = int.Abs(picture.VdcTopRight.Y - picture.VdcBottomLeft.Y);
-            var xScale = (float)drawZone.Width / vdcWidth;
-            var yScale = (float)drawZone.Height / vdcHeight;
+            var vdcWidth = float.Abs(picture.VdcTopRight.X - picture.VdcBottomLeft.X);
+            var vdcHeight = float.Abs(picture.VdcTopRight.Y - picture.VdcBottomLeft.Y);
+            var xScale = drawZone.Width / vdcWidth;
+            var yScale = drawZone.Height / vdcHeight;
 
             var pen = new Pen(picture.LineColor.ToColor(), picture.LineWidth * xScale);
-            var font = new Font(Image.Font, 12f);
+            var font = new Font(Image.Fonts.First(), 12f);
             var fontHeight = font.GetHeight(e.Graphics);
 
             var scalePoint = (PointF p) => new PointF(15 + p.X * xScale, 15 + drawZone.Height - p.Y * yScale);
             var scaleText = (PointF p) => new PointF(15 + p.X * xScale, 15 + drawZone.Height - p.Y * yScale - fontHeight);
 
-            foreach (var line in picture.Polylines)
+            foreach (var line in picture.Polylines.Where(x => x.Points.Length > 0))
             {
                 e.Graphics.DrawLines(pen, line.Points.Select(x => scalePoint(x.ToPointF())).ToArray());
             }
