@@ -22,6 +22,34 @@
         DashDotDot,
     }
 
+    public enum LineType
+    {
+        Solid = 1,
+        Dash,
+        Dot,
+        DashDot,
+        DashDotDot,
+        Reserved
+    }
+
+    public enum LineCapIndicator
+    {
+        Unspecified = 1,
+        Butt,
+        Round,
+        ProjectingSquare,
+        Triangle,
+        Reserved,
+    }
+
+    public enum DashCapIndicator
+    {
+        Unspecified = 1,
+        Butt,
+        Match,
+        Reserved,
+    }
+
     public enum Finality
     {
         NotFinal,
@@ -93,6 +121,23 @@
         Basic8,
         Extended7,
         Extended8,
+    }
+
+    public enum RestrictedTextType
+    {
+        Basic = 1,
+        BoxedCap,
+        BoxedAll,
+        IsotropicCap,
+        IsotropicAll,
+        Justified,
+        Reserved
+    }
+
+    public enum InheritanceFlag
+    {
+        StateList,
+        ApplicationStructure,
     }
 
     public enum ColourSelectionMode
