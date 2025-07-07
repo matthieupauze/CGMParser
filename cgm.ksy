@@ -21,11 +21,12 @@ seq:
 instances:
   name_precision:
     value: 16
-  vdc_type:
-    enum: vdc_type
-    value: vdc_type::integer
+  vdc_width:
+    value: "vdc::integer"
   colour_index_precision:
     value: 16
+  direct_colour_precision:
+    value: 8
 
 types:
   chunk:
@@ -241,10 +242,33 @@ types:
         encoding: UTF-8
         size: len
 
+  # Dependant on direct colour precision
+  direct_colour_value:
+    seq:
+      - id: r
+        type: u1
+      - id: g
+        type: u1
+      - id: b
+        type: u1
+
+  char_set:
+    seq:
+      - id: char_set_type
+        enum: char_set_type
+        type: s2
+      - id: name
+        type: str_with_len
+
   name:
     seq:
       - id: name_id
         type: si(_root.name_precision)
+
+  color_index:
+    seq:
+      - id: colour_index
+        type: ui(_root.colour_index_precision)
 
   # TODO: Support 24-bit numbers
   si:
@@ -272,6 +296,13 @@ types:
             8: u1
             16: u2
             32: u4
+
+  point:
+    seq:
+      - id: x
+        type: u2
+      - id: y
+        type: u2
 
   no_op: {}
   begin_metafile:
@@ -313,9 +344,9 @@ types:
         type: str_with_len
   vdc_type:
     seq:
-      - id: vdc
+      - id: width
         type: s2
-        enum: vdc_type
+        enum: vdc
   integer_precision: {}
   real_precision: {}
   index_precision: {}
@@ -324,12 +355,25 @@ types:
   max_color_index:
     seq:
       - id: value
-        type: si(16)
-  color_value_extent: {}
+        type: color_index
+  color_value_extent:
+    seq:
+      - id: min_colour_value
+        type: direct_colour_value
+      - id: max_colour_value
+        type: direct_colour_value
   metafile_element_list: {}
   metafile_defaults_replacement: {}
-  font_list: {}
-  character_set_list: {}
+  font_list:
+    seq:
+      - id: fonts
+        type: str_with_len
+        repeat: eos
+  character_set_list:
+    seq:
+      - id: char_sets
+        type: char_set
+        repeat: eos
   character_coding_announcer: {}
   name_precision: {}
   maximum_vdc_extent: {}
@@ -341,12 +385,19 @@ types:
   symbol_library_list: {}
   picture_directory: {}
   scaling_mode: {}
-  color_selection_mode: {}
+  color_selection_mode:
+    seq:
+      - id: value
+        enum: colour_selection_mode
+        type: u2
   line_width_spec_mode: {}
   marker_size_spec_mode: {}
   edge_width_spec_mode: {}
   vdc_extent: {}
-  background_color: {}
+  background_color:
+    seq:
+      - id: value
+        type: direct_colour_value
   device_viewport: {}
   device_viewport_spec_mode: {}
   device_viewport_mapping: {}
@@ -376,7 +427,11 @@ types:
   generalized_text_path_mode: {}
   mitre_limit: {}
   transparent_cell_color: {}
-  polyline: {}
+  polyline:
+    seq:
+      - id: points
+        type: point
+        repeat: eos
   disjoint_polyline: {}
   polymarker: {}
   text: {}
@@ -469,9 +524,21 @@ types:
   application_structure_attribute: {}
 
 enums:
-  vdc_type:
+  colour_selection_mode:
+    0: indexed
+    1: direct
+
+  vdc:
     0: integer
     1: real
+
+  char_set_type:
+    0: c_94_char_g_set
+    1: c_96_char_g_set
+    2: c_94_char_multibyte_g_set
+    3: c_96_char_multibyte_g_set
+    4: complete_code
+
   chunk_type:
     0: no_op
     0x0020: begin_metafile
