@@ -363,7 +363,7 @@
         LineJoin = 0x54C0,
         LineTypeContinuation = 0x54E0,
         LineTypeInitialOffset = 0x5500,
-        TextScoreType = 0x55A0,
+        TextScoreType = 0x5520,
         RestrictedTextType = 0x5540,
         InterpolatedInterior = 0x5560,
         EdgeCap = 0x5580,
