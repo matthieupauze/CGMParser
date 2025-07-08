@@ -1,3 +1,5 @@
+// These were generated using kaitai struct
+
 export const ChunkType = Object.freeze({
     NO_OP: 0,
     BEGIN_METAFILE: 32,
