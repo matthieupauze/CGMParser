@@ -484,9 +484,10 @@ types:
   line_bundle_index: {}
   line_type: {}
   line_width:
-    seq:
-      - id: width
-        type: read_vdc
+    {}
+    # seq:
+    #   - id: width
+    #     type: read_vdc
   line_color: {}
   marker_bundle_index: {}
   marker_type: {}

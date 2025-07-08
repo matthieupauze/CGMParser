@@ -1,0 +1,12 @@
+{
+  "name": "cgm.js",
+  "version": "1.0.0",
+  "main": "cgm.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Matthieu Pauze",
+  "license": "MIT",
+  "description": ""
+}

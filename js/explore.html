@@ -1,21 +1,20 @@
 <html>
 
 <head>
-    <script src="KaitaiStream.js"></script>
-    <script src="Cgm.js"></script>
 </head>
 
 <body>
     <pre id="dump">parsing in process...</pre>
-    <script>
+    <script type="module">
+        import { CgmParser } from './Cgm.js'
         var oReq = new XMLHttpRequest();
-        oReq.open("GET", "./test-simple.cgm", true);
+        oReq.open("GET", "../test-complex.cgm", true);
         oReq.responseType = "arraybuffer";
 
         oReq.onload = function (oEvent) {
             var arrayBuffer = oReq.response;
-            var parsedElf = new Cgm(new KaitaiStream(arrayBuffer));
-            document.file = parsedElf;
+            var parsedFile = new CgmParser(arrayBuffer);
+            document.file = parsedFile;
         };
 
         oReq.send(null);
