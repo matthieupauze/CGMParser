@@ -23,6 +23,10 @@ instances:
     value: 16
   vdc_width:
     value: "vdc::integer"
+  integer_precision:
+    value: 16
+  vdc_integer_precision:
+    value: 16
   colour_index_precision:
     value: 16
   direct_colour_precision:
@@ -242,6 +246,15 @@ types:
         encoding: UTF-8
         size: len
 
+  read_vdc:
+    seq:
+      - id: value
+        type:
+          switch-on: _root.vdc_width
+          cases:
+            "vdc::integer": si(_root.vdc_integer_precision)
+            "vdc::real": f4
+
   # Dependant on direct colour precision
   direct_colour_value:
     seq:
@@ -434,7 +447,15 @@ types:
         repeat: eos
   disjoint_polyline: {}
   polymarker: {}
-  text: {}
+  text:
+    seq:
+      - id: location
+        type: point
+      - id: finality
+        enum: finality
+        type: u2
+      - id: content
+        type: str_with_len
   restricted_text: {}
   append_text: {}
   polygon: {}
@@ -462,7 +483,10 @@ types:
   tile: {}
   line_bundle_index: {}
   line_type: {}
-  line_width: {}
+  line_width:
+    seq:
+      - id: width
+        type: read_vdc
   line_color: {}
   marker_bundle_index: {}
   marker_type: {}
@@ -475,7 +499,16 @@ types:
   character_spacing: {}
   text_color: {}
   character_height: {}
-  character_orientation: {}
+  character_orientation:
+    seq:
+      - id: x_up
+        type: read_vdc
+      - id: y_up
+        type: read_vdc
+      - id: x_base
+        type: read_vdc
+      - id: y_base
+        type: read_vdc
   text_path: {}
   text_alignment: {}
   character_set_index: {}
@@ -524,6 +557,10 @@ types:
   application_structure_attribute: {}
 
 enums:
+  finality:
+    0: not_final
+    1: final
+
   colour_selection_mode:
     0: indexed
     1: direct
