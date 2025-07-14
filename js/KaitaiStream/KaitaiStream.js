@@ -1,3 +1,5 @@
+// Vendored from: https://github.com/kaitai-io/kaitai_struct_javascript_runtime under Apache v2
+
 /**
  * KaitaiStream is an implementation of Kaitai Struct API for JavaScript.
  * Based on DataStream - https://github.com/kig/DataStream.js .

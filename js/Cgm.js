@@ -1,5 +1,7 @@
-import { CharSetType, ChunkType, ColourSelectionMode, Vdc } from './consts.js'
-import { KaitaiStream } from './KaitaiStream.js'
+import { CharSetType, ChunkType, ColourSelectionMode, FLOATING_PRECISION, INTEGER_PRECISION, PRECISION_CHOICE, Vdc } from './consts.js'
+import { KaitaiStream } from './KaitaiStream/KaitaiStream.js'
+
+const debug = true
 
 class Command {
 
@@ -20,22 +22,50 @@ class Command {
   constructor(stream, root) {
     this._stream = stream
     this._root = root
-
-
-    // this.read()
   }
 
   /**
    * @abstract
    */
   read() {
-    throw new Error("Read must be implemented")
+    console.error("Read must be implemented")
   }
 
   readString() {
     const len = this._stream.readU1();
-    console.log('doot', len)
     return KaitaiStream.bytesToStr(this._stream.readBytes(len), "UTF-8");
+  }
+
+  readSI() {
+    switch (this._root.integerPrecision) {
+      case INTEGER_PRECISION._8:
+        return this._stream.readS1()
+      case INTEGER_PRECISION._16:
+        return this._stream.readS2be()
+      case INTEGER_PRECISION._24:
+        const bytes = this._stream.readBytes(3)
+        return (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
+      case INTEGER_PRECISION._32:
+        return this._stream.readS4be()
+    }
+    console.error("Integer precision out of range", this._root.integerPrecision, "defaulting to 2 byte int")
+    return this._stream.readS2be()
+  }
+
+  readRealPrecision() {
+    var fpOrFixed = this._stream.readS2be();
+    var wholeWidth = this.readSI();
+    var _fieldWidth = this.readSI();
+    if (fpOrFixed == PRECISION_CHOICE.Floating) {
+      if (wholeWidth == 9) {
+        return FLOATING_PRECISION._32BitFloat
+      }
+      return FLOATING_PRECISION._64BitFloat
+    }
+    if (wholeWidth == 16) {
+      return FLOATING_PRECISION._32BitFixed
+    }
+    return FLOATING_PRECISION._64BitFixed
   }
 }
 
@@ -49,15 +79,43 @@ export class Chunk extends Command {
       case ChunkType.BEGIN_METAFILE:
         this.body = new BeginMetafile(newStream, this._root)
         break;
+      case ChunkType.VDC_TYPE:
+        this.body = new VdcType(newStream, this._root)
+        break;
+      case ChunkType.COLOUR_PRECISION:
+        this.body = new ColourPrecision(newStream, this._root)
+        break;
+      case ChunkType.INTEGER_PRECISION:
+        this.body = new IntegerPrecision(newStream, this._root)
+        break;
+      case ChunkType.REAL_PRECISION:
+        this.body = new RealPrecision(newStream, this._root)
+        break;
+      case ChunkType.COLOR_INDEX_PRECISION:
+        this.body = new ColorIndexPrecision(newStream, this._root)
+        break;
+      case ChunkType.VDC_REAL_PRECISION:
+        this.body = new VdcRealPrecision(newStream, this._root)
+        break;
       default:
-        // console.error("Unsupported tag in file", ChunkType[this.cmd.type])
-        return;
+        if (ChunkType[this.cmd.type].toLowerCase().includes("precision")) {
+          console.error("Unparsed tag in file", ChunkType[this.cmd.type])
+        }
+        break;
     }
-    this.body.read()
-    console.log(this.body)
+    this.body?.read()
+    const bytesRead = newStream.pos;
+    if (debug && this.body && (bytesRead !== this.cmd.len)) {
+      console.warn("Stream not fully read", `Read ${bytesRead} / ${this.cmd.len}`, this.body, ChunkType[this.cmd.type])
+    }
   }
 }
 export class BeginApplicationStructure extends Command { }
+export class VdcType extends Command {
+  read() {
+    this._root.vdcWidth = this._stream.readS2be();
+  }
+}
 export class HatchStyleDefinition extends Command { }
 export class CharacterExpansionFactor extends Command { }
 export class HatchIndex extends Command { }
@@ -92,7 +150,11 @@ export class Circle extends Command { }
 export class ApplicationData extends Command { }
 export class MarkerSize extends Command { }
 export class SymbolOrientation extends Command { }
-export class VdcRealPrecision extends Command { }
+export class VdcRealPrecision extends Command {
+  read() {
+    this._root.vdcRealPrecision = this.readRealPrecision()
+  }
+}
 export class TextAlignment extends Command { }
 export class CharacterSpacing extends Command { }
 export class Polyline extends Command { }
@@ -179,7 +241,11 @@ export class CharSet extends Command { }
 export class MetafileElementList extends Command { }
 export class LineRepresentation extends Command { }
 export class ColorIndex extends Command { }
-export class ColorIndexPrecision extends Command { }
+export class ColorIndexPrecision extends Command {
+  read() {
+    this._root.colourIndexPrecision = this.readSI();
+  }
+}
 export class BeginPicture extends Command { }
 export class CharacterOrientation extends Command { }
 export class LineColor extends Command { }
@@ -239,8 +305,16 @@ export class DeviceViewport extends Command { }
 export class InheritanceFilter extends Command { }
 export class NonUniformRationalBSpline extends Command { }
 export class CharacterSetIndex extends Command { }
-export class IntegerPrecision extends Command { }
-export class ColourPrecision extends Command { }
+export class IntegerPrecision extends Command {
+  read() {
+    this._root.integerPrecision = this._stream.readS2be()
+  }
+}
+export class ColourPrecision extends Command {
+  read() {
+    this._root.directColourPrecision = this._stream.readS2be()
+  }
+}
 export class InteriorStyleSpecMode extends Command { }
 export class AppendText extends Command { }
 export class EdgeVisibility extends Command { }
@@ -251,7 +325,11 @@ export class MaximumVdcExtent extends Command { }
 export class DisjointPolyline extends Command { }
 export class CircularArcCenter extends Command { }
 export class SegmentDisplayPriority extends Command { }
-export class RealPrecision extends Command { }
+export class RealPrecision extends Command {
+  read() {
+    this._root.realPrecision = this.readRealPrecision()
+  }
+}
 export class BeginFigure extends Command { }
 export class CharacterCodingAnnouncer extends Command { }
 export class SegmentTransformation extends Command { }
@@ -272,8 +350,12 @@ export class EdgeCap extends Command { }
 export class CgmParser {
   namePrecision = 16
   vdcWidth = Vdc.INTEGER
-  colourIndexPrecision = 16
+  colourIndexPrecision = 8
   directColourPrecision = 8
+  integerPrecision = INTEGER_PRECISION._16
+  realPrecision = FLOATING_PRECISION._32BitFixed
+  vdcIntegerPrecision = INTEGER_PRECISION._16
+  vdcRealPrecision = FLOATING_PRECISION._32BitFixed
 
   /**
    * @type {Chunk[]}
@@ -292,6 +374,6 @@ export class CgmParser {
       this.chunks.push(c);
       i++;
     } while (!(this._stream.isEof()));
-    console.log(this.chunks)
+    console.log(this.chunks, this)
   }
 }

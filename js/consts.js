@@ -364,6 +364,38 @@ export const Vdc = Object.freeze({
     1: "REAL",
 });
 
+export const FLOATING_PRECISION = Object.freeze({
+    _32BitFloat: 0,
+    _64BitFloat: 1,
+    _32BitFixed: 2,
+    _64BitFixed: 3,
+
+    0: "32 Bit Float",
+    1: "64 Bit Float",
+    2: "32 Bit Fixed",
+    3: "64 Bit Fixed",
+});
+
+export const PRECISION_CHOICE = Object.freeze({
+    Floating: 0,
+    Fixed: 1,
+
+    0: "Floating",
+    1: "Fixed",
+})
+
+export const INTEGER_PRECISION = Object.freeze({
+    _8: 8,
+    _16: 16,
+    _24: 24,
+    _32: 32,
+
+    8: "8",
+    16: "16",
+    24: "24",
+    32: "32",
+});
+
 export const CharSetType = Object.freeze({
     C_94_CHAR_G_SET: 0,
     C_96_CHAR_G_SET: 1,
