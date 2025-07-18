@@ -4,17 +4,23 @@
 </head>
 
 <body>
-    <pre id="dump">parsing in process...</pre>
+    <canvas id="draw" width="500" height="500"></canvas>
+
     <script type="module">
-        import { CgmParser } from './Cgm.js'
-        var oReq = new XMLHttpRequest();
+        import { CgmParser, CanvasRenderer } from './Cgm.js'
+        const oReq = new XMLHttpRequest();
         oReq.open("GET", "../test-complex.cgm", true);
         oReq.responseType = "arraybuffer";
 
         oReq.onload = function (oEvent) {
-            var arrayBuffer = oReq.response;
-            var parsedFile = new CgmParser(arrayBuffer);
-            document.file = parsedFile;
+            const arrayBuffer = oReq.response;
+            /**
+             * @type {CgmParser}
+             */
+            const parsedFile = new CgmParser(arrayBuffer);
+            const context = document.getElementById("draw")
+            const renderer = new CanvasRenderer(context, parsedFile)
+            renderer.render();
         };
 
         oReq.send(null);

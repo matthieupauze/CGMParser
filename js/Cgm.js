@@ -10,7 +10,7 @@ import {
 } from "./consts.js";
 import { KaitaiStream } from "./KaitaiStream/KaitaiStream.js";
 
-const debug = true;
+const debug = false;
 
 class Command {
   /**
@@ -235,7 +235,8 @@ export class Chunk extends Command {
         this.body = new MarkerSize(newStream, this.root);
         break;
       default:
-        console.error("Unparsed tag in file", ChunkType[this.cmd.type]);
+        debug &&
+          console.error("Unparsed tag in file", ChunkType[this.cmd.type]);
         break;
     }
     this.body?.read();
@@ -682,5 +683,48 @@ export class CgmParser {
       i++;
     } while (!this.io.isEof());
     console.log(this.chunks, this);
+  }
+}
+
+export class CanvasRenderer {
+  /**
+   *
+   * @param {HTMLCanvasElement} canvas
+   * @param {CgmParser} parser
+   */
+  constructor(canvas, parser) {
+    this.canvas = canvas;
+    this.parser = parser;
+  }
+
+  render() {
+    /**
+     * @type {CanvasRenderingContext2D}
+     */
+    // @ts-ignore
+    const c = this.canvas.getContext("2d");
+    const canvas = this.canvas;
+
+    // TODO: Do this properly so that the text is correctly written
+    c.transform(1, 0, 0, -1, 0, canvas.height);
+
+    for (const { body } of this.parser.chunks) {
+      if (body instanceof LineWidth) {
+        c.lineWidth = body.lineWidth ?? 10;
+      }
+      if (body instanceof Polyline) {
+        c.beginPath();
+        for (let i = 0; i < body.points.length; i++) {
+          const p = body.points[i];
+          if (i == 0) {
+            c.moveTo(p.x, p.y);
+          } else {
+            c.lineTo(p.x, p.y);
+          }
+        }
+        c.closePath();
+        c.stroke();
+      }
+    }
   }
 }
