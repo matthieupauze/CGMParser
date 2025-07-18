@@ -750,8 +750,8 @@ public static class Ext
     {
         var bytes = reader.ReadBytesRequired(3);
         return (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-    }
 
+    }
     public static uint ReadUInt32BE(this BinaryReader reader)
     {
         var b = reader.ReadBytesRequired(4);

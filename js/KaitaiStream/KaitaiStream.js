@@ -1,4 +1,5 @@
 // Vendored from: https://github.com/kaitai-io/kaitai_struct_javascript_runtime under Apache v2
+// @ts-nocheck
 
 /**
  * KaitaiStream is an implementation of Kaitai Struct API for JavaScript.
@@ -6,8 +7,8 @@
  */
 export class KaitaiStream {
     /**
-     * @param arrayBuffer ArrayBuffer to read from.
-     * @param byteOffset Offset from arrayBuffer beginning for the KaitaiStream.
+     * @param {ArrayBuffer | DataView<any> | undefined} arrayBuffer ArrayBuffer to read from.
+     * @param {number | undefined} [byteOffset] Offset from arrayBuffer beginning for the KaitaiStream.
      */
     constructor(arrayBuffer, byteOffset) {
         this._byteOffset = byteOffset || 0
@@ -142,8 +143,7 @@ export class KaitaiStream {
     /**
      * Sets the KaitaiStream read/write position to given position.
      * Clamps between 0 and KaitaiStream length.
-     *
-     * @param pos Position to seek to.
+     * @param {number} pos Position to seek to.
      */
     seek(pos) {
         const npos = Math.max(0, Math.min(this.size, pos))
@@ -498,9 +498,8 @@ export class KaitaiStream {
 
     /**
      * Unused since Kaitai Struct Compiler v0.9+ - compatibility with older versions.
-     *
-     * @deprecated Use {@link readBitsIntBe} instead.
-     * @param n The number of bits to read.
+     * 
+     * @param {number} n The number of bits to read.
      * @returns The read bits.
      */
     readBitsInt(n) {
@@ -508,7 +507,7 @@ export class KaitaiStream {
     }
 
     /**
-     * @param n The number of bits to read.
+     * @param {string | number} n The number of bits to read.
      * @returns The read bits.
      * @throws {RangeError}
      */
@@ -568,7 +567,7 @@ export class KaitaiStream {
     // ========================================================================
 
     /**
-     * @param len The number of bytes to read.
+     * @param {number | undefined} len The number of bytes to read.
      * @returns The read bytes.
      */
     readBytes(len) {
@@ -584,11 +583,10 @@ export class KaitaiStream {
 
     /**
      * Reads bytes until the terminator byte is found.
-     *
-     * @param terminator The terminator byte.
-     * @param include True if the terminator should be included with the returned bytes.
-     * @param consume True if the terminator should be consumed from the input stream.
-     * @param eosError True to throw an error if the end of stream is reached.
+     * @param {string | number} terminator The terminator byte.
+     * @param {any} include True if the terminator should be included with the returned bytes.
+     * @param {any} consume True if the terminator should be consumed from the input stream.
+     * @param {any} eosError True to throw an error if the end of stream is reached.
      * @returns The read bytes.
      * @throws {string}
      */
@@ -622,11 +620,10 @@ export class KaitaiStream {
 
     /**
      * Reads bytes until the terminator byte sequence is found.
-     *
-     * @param terminator The terminator byte sequence.
-     * @param include True if the terminator should be included with the returned bytes.
-     * @param consume True if the terminator should be consumed from the input stream.
-     * @param eosError True to throw an error if the end of stream is reached.
+     * @param {string | any[]} terminator The terminator byte sequence.
+     * @param {any} include True if the terminator should be included with the returned bytes.
+     * @param {any} consume True if the terminator should be consumed from the input stream.
+     * @param {any} eosError True to throw an error if the end of stream is reached.
      * @returns The read bytes.
      * @throws {string}
      */
@@ -663,8 +660,7 @@ export class KaitaiStream {
 
     /**
      * Unused since Kaitai Struct Compiler v0.9+ - compatibility with older versions.
-     *
-     * @param expected The expected bytes.
+     * @param {string | any[]} expected The expected bytes.
      * @returns The read bytes.
      * @throws {KaitaiStream.UnexpectedDataError}
      */
@@ -683,8 +679,8 @@ export class KaitaiStream {
     }
 
     /**
-     * @param data The data.
-     * @param padByte The byte to strip.
+     * @param {string | any[]} data The data.
+     * @param {any} padByte The byte to strip.
      * @returns The stripped data.
      */
     static bytesStripRight(data, padByte) {
@@ -696,9 +692,9 @@ export class KaitaiStream {
     }
 
     /**
-     * @param data The data.
-     * @param term The terminator.
-     * @param include True if the returned bytes should include the terminator.
+     * @param {string | any[]} data The data.
+     * @param {any} term The terminator.
+     * @param {any} include True if the returned bytes should include the terminator.
      * @returns The terminated bytes.
      */
     static bytesTerminate(data, term, include) {
@@ -712,9 +708,9 @@ export class KaitaiStream {
     }
 
     /**
-     * @param data The data.
-     * @param term The terminator.
-     * @param include True if the returned bytes should include the terminator.
+     * @param {string | any[] | Uint8Array<any>} data The data.
+     * @param {string | any[]} term The terminator.
+     * @param {boolean} include True if the returned bytes should include the terminator.
      * @returns The terminated bytes.
      */
     static bytesTerminateMulti(data, term, include) {
@@ -740,8 +736,8 @@ export class KaitaiStream {
     }
 
     /**
-     * @param arr The bytes.
-     * @param encoding The character encoding.
+     * @param {AllowSharedBufferSource | undefined} arr The bytes.
+     * @param {string | null | undefined} encoding The character encoding.
      * @returns {string} The decoded string.
      */
     static bytesToStr(arr, encoding) {
@@ -780,8 +776,8 @@ export class KaitaiStream {
     // ========================================================================
 
     /**
-     * @param data The input bytes.
-     * @param key The key byte.
+     * @param {string | any[]} data The input bytes.
+     * @param {number} key The key byte.
      * @returns The Xor'd bytes.
      */
     static processXorOne(data, key) {
@@ -792,8 +788,8 @@ export class KaitaiStream {
     }
 
     /**
-     * @param data The input bytes.
-     * @param key The key bytes.
+     * @param {string | any[]} data The input bytes.
+     * @param {string | any[]} key The key bytes.
      * @returns The Xor'd bytes.
      */
     static processXorMany(data, key) {
@@ -810,9 +806,9 @@ export class KaitaiStream {
     }
 
     /**
-     * @param data The input bytes.
-     * @param amount The shift amount in bits.
-     * @param groupSize The number of bytes in each group.
+     * @param {string | any[]} data The input bytes.
+     * @param {number} amount The shift amount in bits.
+     * @param {string | number} groupSize The number of bytes in each group.
      * @returns The rotated bytes.
      * @throws {string}
      */
@@ -831,7 +827,7 @@ export class KaitaiStream {
     }
 
     /**
-     * @param buf The input bytes.
+     * @param {{ buffer: string | any[]; byteOffset: any; byteLength: any; }} buf The input bytes.
      * @returns The uncompressed bytes.
      */
     static processZlib(buf) {
@@ -867,8 +863,8 @@ export class KaitaiStream {
     // ========================================================================
 
     /**
-     * @param a The dividend.
-     * @param b The divisor.
+     * @param {number} a The dividend.
+     * @param {number} b The divisor.
      * @returns The result of `a` mod `b`.
      * @throws {string}
      */
@@ -881,8 +877,7 @@ export class KaitaiStream {
 
     /**
      * Gets the smallest value in an array.
-     *
-     * @param arr The input array.
+     * @param {string | any[]} arr The input array.
      * @returns The smallest value.
      */
     static arrayMin(arr) {
@@ -897,8 +892,7 @@ export class KaitaiStream {
 
     /**
      * Gets the largest value in an array.
-     *
-     * @param arr The input array.
+     * @param {string | any[]} arr The input array.
      * @returns The largest value.
      */
     static arrayMax(arr) {
@@ -913,9 +907,8 @@ export class KaitaiStream {
 
     /**
      * Compares two arrays of bytes from left to right.
-     *
-     * @param a The first array.
-     * @param b The second array.
+     * @param {string | any[] | Uint8Array<any>} a The first array.
+     * @param {string | any[]} b The second array.
      * @returns `0` if the arrays are the equal, a positive number if `a` is greater than `b`, or a negative number if `a` is less than `b`.
      */
     static byteArrayCompare(a, b) {
@@ -944,8 +937,8 @@ export class KaitaiStream {
         name = "EOFError"
 
         /**
-         * @param bytesReq The number of bytes requested.
-         * @param bytesAvail The number of bytes available.
+         * @param {string} bytesReq The number of bytes requested.
+         * @param {string} bytesAvail The number of bytes available.
          */
         constructor(bytesReq, bytesAvail) {
             super(
@@ -969,8 +962,8 @@ export class KaitaiStream {
         name = "UnexpectedDataError"
 
         /**
-         * @param expected The expected value.
-         * @param actual The actual value.
+         * @param {string} expected The expected value.
+         * @param {string} actual The actual value.
          */
         constructor(expected, actual) {
             super("expected [" + expected + "], but got [" + actual + "]")
@@ -998,8 +991,8 @@ export class KaitaiStream {
         name = "ValidationNotEqualError"
 
         /**
-         * @param expected The expected value.
-         * @param actual The actual value.
+         * @param {string} expected The expected value.
+         * @param {string} actual The actual value.
          */
         constructor(expected, actual) {
             super("not equal, expected [" + expected + "], but got [" + actual + "]")
@@ -1017,8 +1010,8 @@ export class KaitaiStream {
         name = "ValidationLessThanError"
 
         /**
-         * @param min The minimum allowed value.
-         * @param actual The actual value.
+         * @param {string} min The minimum allowed value.
+         * @param {string} actual The actual value.
          */
         constructor(min, actual) {
             super("not in range, min [" + min + "], but got [" + actual + "]")
@@ -1036,8 +1029,8 @@ export class KaitaiStream {
         name = "ValidationGreaterThanError"
 
         /**
-         * @param max The maximum allowed value.
-         * @param actual The actual value.
+         * @param {string} max The maximum allowed value.
+         * @param {string} actual The actual value.
          */
         constructor(max, actual) {
             super("not in range, max [" + max + "], but got [" + actual + "]")
@@ -1055,7 +1048,7 @@ export class KaitaiStream {
         name = "ValidationNotAnyOfError"
 
         /**
-         * @param actual The actual value.
+         * @param {string} actual The actual value.
          */
         constructor(actual) {
             super("not any of the list, got [" + actual + "]")
@@ -1072,7 +1065,7 @@ export class KaitaiStream {
         name = "ValidationNotInEnumError"
 
         /**
-         * @param actual The actual value.
+         * @param {string} actual The actual value.
          */
         constructor(actual) {
             super("not in the enum, got [" + actual + "]")
@@ -1089,7 +1082,7 @@ export class KaitaiStream {
         name = "ValidationExprError"
 
         /**
-         * @param actual The actual value.
+         * @param {string} actual The actual value.
          */
         constructor(actual) {
             super("not matching the expression, got [" + actual + "]")
@@ -1102,8 +1095,7 @@ export class KaitaiStream {
     /**
      * Ensures that we have at least `length` bytes left in the stream.
      * If not, throws an EOFError.
-     *
-     * @param length Number of bytes to require.
+     * @param {number} length Number of bytes to require.
      * @throws {KaitaiStream.EOFError}
      */
     ensureBytesLeft(length) {
@@ -1115,8 +1107,7 @@ export class KaitaiStream {
     /**
      * Maps a Uint8Array into the KaitaiStream buffer.
      * Nice for quickly reading in data.
-     *
-     * @param length Number of elements to map.
+     * @param {number | undefined} length Number of elements to map.
      * @returns A Uint8Array to the KaitaiStream backing buffer.
      */
     mapUint8Array(length) {
@@ -1133,8 +1124,7 @@ export class KaitaiStream {
      * Creates an array from an array of character codes.
      * Uses String.fromCharCode in chunks for memory efficiency and then concatenates
      * the resulting string chunks.
-     *
-     * @param array Array of character codes.
+     * @param {{ length: number; subarray: (arg0: number, arg1: number) => any; }} array Array of character codes.
      * @returns String created from the character codes.
      */
     static createStringFromArray(array) {
